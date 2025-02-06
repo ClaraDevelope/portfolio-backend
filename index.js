@@ -5,10 +5,10 @@ const cors = require("cors");
 const { programarEnvio, enviarReporteVisitas } = require("./mailer");
 
 const app = express();
+app.use(cors());
 const PORT = process.env.PORT || 3000;
 const VISITAS_FILE = "visitas.json";
 
-app.use(cors());
 app.use(express.json());
 
 function getVisitas() {
@@ -26,6 +26,9 @@ app.get("/contador", (req, res) => {
 
 app.get("/contador/get", (req, res) => {
     res.json(getVisitas());
+});
+app.use("*", (req, res) => {
+    return res.status(404).json({ message: "Ruta no encontrada" });
 });
 
 app.listen(PORT, () => {
