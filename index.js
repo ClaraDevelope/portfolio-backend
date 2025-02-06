@@ -4,23 +4,26 @@ const cors = require("cors");
 const fs = require("fs");
 const { programarEnvio, enviarReporteVisitas } = require("./mailer");
 
+const contadorRouter = express.Router();
+
 const app = express();
 app.use(cors());
 const PORT = process.env.PORT || 3000;
 const VISITAS_FILE = "visitas.json";
 
-app.use(express.json());
-
-app.get("/api/v1/contador", (req, res) => {
+contadorRouter.use("/", (req, res) => {
     let visitas = getVisitas();
     visitas.count++;
     fs.writeFileSync(VISITAS_FILE, JSON.stringify(visitas));
     res.json(visitas);
 });
 
-app.get("/api/v1/contador/get", (req, res) => {
+contadorRouter.use("/get", (req, res) => {
     res.json(getVisitas());
 });
+
+app.use("/api/v1/contador", contadorRouter);
+
 app.use("*", (req, res) => {
     return res.status(404).json({ message: "Ruta no encontrada" });
 });
@@ -32,5 +35,6 @@ function getVisitas() {
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
-    programarEnvio(); 
+    programarEnvio();
 });
+
