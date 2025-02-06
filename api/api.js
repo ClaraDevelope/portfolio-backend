@@ -1,39 +1,56 @@
-const fs = require("fs");
-const path = require("path");
+const Visita = require("../models/visita"); // Asegúrate de tener la ruta correcta al modelo
 
-const VISITAS_FILE = path.join(__dirname, "visitas.json");
 
-const getVisitas = () => {
-  if (!fs.existsSync(VISITAS_FILE)) {
-    return { count: 0 };
-  }
-  return JSON.parse(fs.readFileSync(VISITAS_FILE, "utf8"));
-};
-const counter = (req, res, next) => {
+const getVisitas = async () => {
   try {
-
-    let visitas = getVisitas();
-    
-    visitas.count++;
-
-    fs.writeFileSync(VISITAS_FILE, JSON.stringify(visitas));
-
-    res.json(visitas);
+    const visita = await Visita.findOne(); // Buscamos el primer documento en la colección
+    if (!visita) {
+      // Si no encontramos ningún documento, creamos uno nuevo
+      const newVisita = new Visita({ count: 0 });
+      await newVisita.save();
+      return newVisita;
+    }
+    return visita;
   } catch (error) {
-    next(error);
+    console.error("Error al obtener las visitas:", error);
+    throw new Error("Error al obtener las visitas");
   }
 };
-const getCounter = (req, res, next) => {
+
+
+const counter = async (req, res) => {
   try {
-    const visitas = getVisitas();
-    res.json(visitas);
+    let visita = await getVisitas(); // Obtenemos las visitas
+
+    console.log("Visitas antes de incrementar:", visita.count); // Muestra el contador antes de incrementar
+
+    visita.count++; // Incrementa el contador
+
+    console.log("Visitas después de incrementar:", visita.count); // Muestra el contador después de incrementar
+
+    // Guardamos el contador actualizado en la base de datos
+    await visita.save();
+
+    console.log("Contador actualizado correctamente.");
+    res.json(visita); // Respondemos con el contador actualizado
   } catch (error) {
-    next(error);
+    console.error("Error al incrementar el contador:", error);
+    res.status(500).json({ error: "Error al incrementar el contador" });
   }
 };
 
-// Exportamos las funciones para poder usarlas en otros archivos
+const getCounter = async (req, res) => {
+  try {
+    const visita = await getVisitas();
+    res.json(visita); // Respondemos con el contador actual
+  } catch (error) {
+    console.error("Error al obtener el contador:", error);
+    res.status(500).json({ error: "Error al obtener el contador" });
+  }
+};
+
 module.exports = {
   counter,
   getCounter
 };
+
