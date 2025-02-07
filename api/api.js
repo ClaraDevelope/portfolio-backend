@@ -1,53 +1,49 @@
-const Visita = require("../models/visita"); // Asegúrate de tener la ruta correcta al modelo
+const Visita = require("../models/visita"); 
 
 
 const getVisitas = async () => {
   try {
-    const visita = await Visita.findOne(); // Buscamos el primer documento en la colección
-    if (!visita) {
-      // Si no encontramos ningún documento, creamos uno nuevo
-      const newVisita = new Visita({ count: 0 });
-      await newVisita.save();
-      return newVisita;
-    }
-    return visita;
+    const visita = await Visita.findOneAndUpdate(
+      {},
+      { $inc: { count: 1 } },
+      { new: true, upsert: true }
+    );
+    return visita; // Solo devuelve la visita, no envía respuesta
   } catch (error) {
-    console.error("Error al obtener las visitas:", error);
-    throw new Error("Error al obtener las visitas");
+    console.error("Error al obtener o actualizar las visitas:", error);
+    throw new Error("Error al obtener o actualizar las visitas");
   }
 };
 
-
-const counter = async (req, res) => {
-  try {
-    let visita = await getVisitas(); // Obtenemos las visitas
-
-    console.log("Visitas antes de incrementar:", visita.count); // Muestra el contador antes de incrementar
-
-    visita.count++; // Incrementa el contador
-
-    console.log("Visitas después de incrementar:", visita.count); // Muestra el contador después de incrementar
-
-    // Guardamos el contador actualizado en la base de datos
+const counter = async (req, res, next) => {
+try {
+    const visita = await getVisitas(); 
+    if (!visita) {
+      console.error("No se encontró la visita.");
+      return res.status(500).json({ error: "No se encontró la visita." });
+    }
+    console.log("Visitas antes de incrementar:", visita.count);
+    visita.count++;
+    console.log("Visitas después de incrementar:", visita.count);
     await visita.save();
-
     console.log("Contador actualizado correctamente.");
-    res.json(visita); // Respondemos con el contador actualizado
+    res.status(200).json(visita); 
   } catch (error) {
     console.error("Error al incrementar el contador:", error);
     res.status(500).json({ error: "Error al incrementar el contador" });
   }
 };
 
-const getCounter = async (req, res) => {
+const getCounter = async (req, res, next) => {
   try {
-    const visita = await getVisitas();
-    res.json(visita); // Respondemos con el contador actual
+    const visita = await getVisitas(); // Obtiene la visita
+    res.status(200).json(visita);  // Envía la respuesta con la visita
   } catch (error) {
     console.error("Error al obtener el contador:", error);
     res.status(500).json({ error: "Error al obtener el contador" });
   }
 };
+
 
 module.exports = {
   counter,
