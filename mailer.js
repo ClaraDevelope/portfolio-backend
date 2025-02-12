@@ -6,11 +6,10 @@ const Visita = require("./models/visita");
 const obtenerVisitas = async () => {
   try {
     console.time("Visitas Query");
-    const visita = await Visita.findOne(); // Buscamos el primer documento en la colección
+    const visita = await Visita.findOne();
     console.timeEnd("Visitas Query");
 
     if (!visita) {
-      // Si no encontramos ningún documento, creamos uno nuevo
       const newVisita = new Visita({ count: 0 });
       await newVisita.save();
       return newVisita;

@@ -1,43 +1,36 @@
 const Visita = require("../models/visita"); 
 
 
-const getVisitas = async () => {
+const incrementVisitas = async () => {
   try {
     const visita = await Visita.findOneAndUpdate(
-      {},
-      { $inc: { count: 1 } },
-      { new: true, upsert: true }
+      {},  // Sin filtro para actualizar el primer documento
+      { $inc: { count: 1 } },  // Incrementa el campo count
+      { new: true, upsert: true }  // Asegura que se cree si no existe
     );
-    return visita; // Solo devuelve la visita, no envía respuesta
+    return visita; // Devuelve el documento con el contador actualizado
   } catch (error) {
-    console.error("Error al obtener o actualizar las visitas:", error);
-    throw new Error("Error al obtener o actualizar las visitas");
+    console.error("Error al incrementar el contador:", error);
+    throw new Error("Error al incrementar el contador");
   }
 };
 
 const counter = async (req, res, next) => {
-try {
-    const visita = await getVisitas(); 
-    if (!visita) {
-      console.error("No se encontró la visita.");
-      return res.status(500).json({ error: "No se encontró la visita." });
-    }
-    console.log("Visitas antes de incrementar:", visita.count);
-    visita.count++;
-    console.log("Visitas después de incrementar:", visita.count);
-    await visita.save();
+  try {
+    const visita = await incrementVisitas();  // Solo incrementa y devuelve el resultado
     console.log("Contador actualizado correctamente.");
-    res.status(200).json(visita); 
+    res.status(200).json(visita);  // Devuelve el documento con el contador actualizado
   } catch (error) {
     console.error("Error al incrementar el contador:", error);
     res.status(500).json({ error: "Error al incrementar el contador" });
   }
 };
 
+
 const getCounter = async (req, res, next) => {
   try {
-    const visita = await getVisitas(); // Obtiene la visita
-    res.status(200).json(visita);  // Envía la respuesta con la visita
+    const visita = await Visita.findOne({});  // Busca el primer documento
+    res.status(200).json(visita);  // Devuelve solo el valor de visitas sin modificarlo
   } catch (error) {
     console.error("Error al obtener el contador:", error);
     res.status(500).json({ error: "Error al obtener el contador" });

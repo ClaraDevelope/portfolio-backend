@@ -1,8 +1,9 @@
 const { counter, getCounter } = require("../api/api");
 const counterRouter = require('express').Router();
 
-counterRouter.post("/contador", counter);  
-counterRouter.get("/contador/get", getCounter);
+counterRouter.get("/contador/", getCounter);
+counterRouter.post("/contador/post", counter);  
+
 
 
 module.exports = counterRouter;
