@@ -7,7 +7,8 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.EMAIL_USER,  // Correo de Gmail
     pass: process.env.EMAIL_PASS   // Contraseña o App Password de Gmail
-  }
+  },
+  secure: true,
 });
 
 // Función para obtener el contador de visitas desde MongoDB
