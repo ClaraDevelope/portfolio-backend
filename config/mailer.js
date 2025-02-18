@@ -34,7 +34,7 @@ const enviarReporteVisitas = async () => {
     const mailOptions = {
       from: process.env.EMAIL_USER,          // Remitente
       to: process.env.EMAIL_DESTINO,         // Destinatario
-      subject: "📊 Informe Diario de Visitas",  // Asunto del correo
+      subject: "📊 Nueva visita a tu Portfolio!!",  // Asunto del correo
       text: `El número de visitas es: ${visitas.count}` // Cuerpo del correo
     };
 
@@ -51,13 +51,5 @@ const enviarReporteVisitas = async () => {
   }
 };
 
-// Función para programar el envío diario del informe
-function programarEnvio() {
-  setInterval(() => {
-    console.log("⏰ Enviando informe diario de visitas...");
-    enviarReporteVisitas(); 
-  }, 24 * 60 * 60 * 1000);  // Enviar cada 24 horas
-  console.log("📧 Tarea programada: Envío diario de visitas activado.");
-}
 
-module.exports = { enviarReporteVisitas, programarEnvio };
+module.exports = { enviarReporteVisitas };

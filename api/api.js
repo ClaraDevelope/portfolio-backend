@@ -1,3 +1,4 @@
+const { enviarReporteVisitas } = require("../config/mailer");
 const Visita = require("../models/visita"); 
 
 
@@ -19,6 +20,7 @@ const counter = async (req, res, next) => {
   try {
     const visita = await incrementVisitas();  // Solo incrementa y devuelve el resultado
     console.log("Contador actualizado correctamente.");
+    await enviarReporteVisitas()
     res.status(200).json(visita);  // Devuelve el documento con el contador actualizado
   } catch (error) {
     console.error("Error al incrementar el contador:", error);
