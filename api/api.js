@@ -10,36 +10,27 @@ const getUbicacion = async (ip) => {
 
     console.log(`🌍 Obteniendo ubicación para IP: ${ip}`);
 
-    const url = `http://ip-api.com/json/${ip}`;
+    const url = `https://ip-api.com/json/${ip}`; 
 
-    const req = https.get(url, (res) => {
+    https.get(url, (res) => {
       let data = "";
       res.on("data", (chunk) => {
         data += chunk;
       });
-
       res.on("end", () => {
         try {
           const locationData = JSON.parse(data);
           if (locationData.status === "fail") {
             return resolve("Desconocida");
           }
-          resolve(`${locationData.city || "Desconocida"}, ${locationData.country || "Desconocida"}`);
+          resolve(`${locationData.city}, ${locationData.country}`);
         } catch (error) {
           console.error("❌ Error procesando ubicación:", error);
           resolve("Desconocida");
         }
       });
-    });
-
-    req.on("error", (err) => {
+    }).on("error", (err) => {
       console.error("❌ Error en la solicitud de ubicación:", err);
-      resolve("Desconocida");
-    });
-
-    req.setTimeout(5000, () => {
-      console.error("⏳ Timeout en la solicitud de ubicación");
-      req.destroy();
       resolve("Desconocida");
     });
   });
@@ -52,16 +43,13 @@ const incrementVisitas = async (ip) => {
 
     const visita = await Visita.findOneAndUpdate(
       {},
-      {
-        $inc: { count: 1 }, // Incrementar el contador sin sobrescribir otros campos
-        $set: { timestamp: new Date(), location: ubicacion }, // Guardar la fecha y ubicación
-      },
+      { $inc: { count: 1 }, timestamp: new Date(), location: ubicacion },
       { new: true, upsert: true }
     );
 
     return { visita, ubicacion };
   } catch (error) {
-    console.error("❌ Error al incrementar el contador en MongoDB:", error.message, error.stack);
+    console.error("❌ Error al incrementar el contador:", error);
     throw new Error("Error al incrementar el contador");
   }
 };
@@ -71,21 +59,20 @@ const counter = async (req, res) => {
     console.log("🛂 Verificando autenticación...");
     console.log("🕵️‍♂️ Headers recibidos: ", req.headers);
 
-    const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.connection.remoteAddress || req.ip;
-    console.log(`🌎 IP detectada: ${ip}`);
+    let ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress || req.ip;
+    
+    // 🔥 Si `x-forwarded-for` es un array, tomamos la primera IP 🔥
+    if (ip.includes(",")) {
+      ip = ip.split(",")[0].trim();
+    }
 
     const { visita, ubicacion } = await incrementVisitas(ip);
 
-    try {
-      await enviarReporteVisitas(ubicacion);
-    } catch (error) {
-      console.error("⚠️ Error al enviar el correo de reporte:", error);
-    }
-
+    await enviarReporteVisitas(ubicacion);
     res.status(200).json(visita);
   } catch (error) {
-    console.error("❌ ERROR DETALLADO EN EL BACKEND:", error.message, error.stack);
-    res.status(500).json({ error: error.message || "Error al incrementar el contador" });
+    console.error("❌ Error al incrementar el contador:", error);
+    res.status(500).json({ error: "Error al incrementar el contador" });
   }
 };
 
@@ -94,13 +81,14 @@ const getCounter = async (req, res) => {
     const visita = await Visita.findOne({});
     res.status(200).json(visita);
   } catch (error) {
-    console.error("❌ Error al obtener el contador:", error.message, error.stack);
-    res.status(500).json({ error: error.message || "Error al obtener el contador" });
+    console.error("❌ Error al obtener el contador:", error);
+    res.status(500).json({ error: "Error al obtener el contador" });
   }
 };
 
 module.exports = {
   counter,
-  getCounter,
+  getCounter
 };
+
 

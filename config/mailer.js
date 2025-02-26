@@ -9,7 +9,13 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS
   },
   secure: true,
+  pool: true, // ⬅️ Mantiene la conexión activa
+  maxConnections: 1,
+  maxMessages: 5, // ⬅️ Enviar 5 emails por conexión
+  rateLimit: true // ⬅️ Evita bloqueos por enviar rápido
 });
+
+
 
 const getVisitas = async () => {
   try {
@@ -28,29 +34,34 @@ const getVisitas = async () => {
 
 const enviarReporteVisitas = async (ubicacion) => {
   try {
-    const visita = await getVisitas();
-    console.log("📧 Intentando enviar correo con ubicación:", ubicacion);
+    console.log("📧 Intentando enviar email...");
     
+    const visita = await getVisitas();
+
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.EMAIL_DESTINO,
       subject: "📊 Nueva visita a tu Portfolio!!",
-      text: `El número de visitas es: ${visita.count}
-      📅 Fecha y hora: ${new Date().toLocaleString()}
-      📍 Ubicación: ${ubicacion}`
+      text: `🔥 ¡Nueva visita desde ${ubicacion}! 🔥\n👀 Total visitas: ${visita.count}`
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log("❌ Error al enviar el correo: ", error);
-      } else {
-        console.log("📩 Correo enviado correctamente: " + info.response);
-      }
-    });
+    // ⬇️ Espera 1 segundo antes de enviar para evitar bloqueos
+    setTimeout(() => {
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("❌ Error al enviar el correo:", error);
+        } else {
+          console.log(`✅ Correo enviado con éxito: ${info.response}`);
+        }
+      });
+    }, 1000); 
   } catch (error) {
-    console.error("❌ Error al enviar el reporte de visitas:", error);
+    console.error("❌ Error en `enviarReporteVisitas()`:", error);
   }
 };
 
+
+
 module.exports = { enviarReporteVisitas };
+
 
