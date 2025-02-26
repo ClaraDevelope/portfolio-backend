@@ -1,8 +1,8 @@
 require("dotenv").config();
 const cors = require("cors");
 const express = require("express");
-const counterRouter = require("./routes/counterRoutes");
 const { connectDB } = require("./config/db");
+const counterRouter = require("./api/counterRouter");
 
 const app = express();
 app.use(cors());
