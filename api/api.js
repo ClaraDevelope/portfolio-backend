@@ -61,7 +61,7 @@ const incrementVisitas = async (ip) => {
 
     return { visita, ubicacion };
   } catch (error) {
-    console.error("❌ Error al incrementar el contador:", error);
+    console.error("❌ Error al incrementar el contador en MongoDB:", error.message, error.stack);
     throw new Error("Error al incrementar el contador");
   }
 };
@@ -84,8 +84,8 @@ const counter = async (req, res) => {
 
     res.status(200).json(visita);
   } catch (error) {
-    console.error("❌ Error al incrementar el contador:", error);
-    res.status(500).json({ error: "Error al incrementar el contador" });
+    console.error("❌ ERROR DETALLADO EN EL BACKEND:", error.message, error.stack);
+    res.status(500).json({ error: error.message || "Error al incrementar el contador" });
   }
 };
 
@@ -94,8 +94,8 @@ const getCounter = async (req, res) => {
     const visita = await Visita.findOne({});
     res.status(200).json(visita);
   } catch (error) {
-    console.error("❌ Error al obtener el contador:", error);
-    res.status(500).json({ error: "Error al obtener el contador" });
+    console.error("❌ Error al obtener el contador:", error.message, error.stack);
+    res.status(500).json({ error: error.message || "Error al obtener el contador" });
   }
 };
 
@@ -103,3 +103,4 @@ module.exports = {
   counter,
   getCounter,
 };
+
