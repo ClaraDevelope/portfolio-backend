@@ -1,12 +1,12 @@
 const nodemailer = require("nodemailer");
-const Visita = require("../models/visita"); // Asegúrate de que la ruta al modelo sea correcta
+const Visita = require("../models/visita"); 
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",  // Usando Gmail como servicio de correo
+  service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,  // Correo de Gmail
-    pass: process.env.EMAIL_PASS   // Contraseña o App Password de Gmail
+    user: process.env.EMAIL_USER,  
+    pass: process.env.EMAIL_PASS   
   },
   secure: true,
 });
@@ -14,32 +14,32 @@ const transporter = nodemailer.createTransport({
 // Función para obtener el contador de visitas desde MongoDB
 const getVisitas = async () => {
   try {
-    const visita = await Visita.findOne();  // Buscamos el primer documento
+    const visita = await Visita.findOne().sort({ timestamp: -1 });  
     if (!visita) {
-      // Si no existe, creamos un nuevo documento
       const newVisita = new Visita({ count: 0 });
       await newVisita.save();
       return newVisita;
     }
-    return visita;  // Devolvemos el contador de visitas
+    return visita;
   } catch (error) {
     console.error("Error al obtener las visitas:", error);
-    return { count: 0 };  // En caso de error, devolvemos un contador por defecto
+    return { count: 0, timestamp: new Date(), location: "Desconocida" };
   }
 };
 
-// Función para enviar el reporte de visitas
-const enviarReporteVisitas = async () => {
+// Función para enviar el correo con la visita registrada
+const enviarReporteVisitas = async (ubicacion) => {
   try {
-    const visitas = await getVisitas(); // Obtenemos las visitas desde la base de datos
+    const visita = await getVisitas();
     const mailOptions = {
-      from: process.env.EMAIL_USER,          // Remitente
-      to: process.env.EMAIL_DESTINO,         // Destinatario
-      subject: "📊 Nueva visita a tu Portfolio!!",  // Asunto del correo
-      text: `El número de visitas es: ${visitas.count}` // Cuerpo del correo
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_DESTINO, 
+      subject: "📊 Nueva visita a tu Portfolio!!",
+      text: `El número de visitas es: ${visita.count}
+      📅 Fecha y hora: ${new Date().toLocaleString()}
+      📍 Ubicación: ${ubicacion}`
     };
 
-    // Enviar el correo
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log("Error al enviar el correo: ", error);
@@ -51,6 +51,5 @@ const enviarReporteVisitas = async () => {
     console.error("Error al enviar el reporte de visitas:", error);
   }
 };
-
 
 module.exports = { enviarReporteVisitas };

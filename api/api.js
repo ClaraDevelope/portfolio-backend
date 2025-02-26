@@ -1,15 +1,29 @@
 const { enviarReporteVisitas } = require("../config/mailer");
-const Visita = require("../models/visita"); 
+const Visita = require("../models/visita");
+const axios = require("axios");
 
-
-const incrementVisitas = async () => {
+const getUbicacion = async (ip) => {
   try {
+    if (ip === "127.0.0.1" || ip === "::1") {
+      return "Localhost"; // Si la IP es local
+    }
+    const response = await axios.get(`http://ip-api.com/json/${ip}`);
+    return `${response.data.city}, ${response.data.country}`;
+  } catch (error) {
+    console.error("Error obteniendo ubicación:", error);
+    return "Desconocida";
+  }
+};
+
+const incrementVisitas = async (ip) => {
+  try {
+    const ubicacion = await getUbicacion(ip);
     const visita = await Visita.findOneAndUpdate(
-      {},  // Sin filtro para actualizar el primer documento
-      { $inc: { count: 1 } },  // Incrementa el campo count
-      { new: true, upsert: true }  // Asegura que se cree si no existe
+      {},
+      { $inc: { count: 1 }, timestamp: new Date(), location: ubicacion },
+      { new: true, upsert: true }
     );
-    return visita; // Devuelve el documento con el contador actualizado
+    return { visita, ubicacion };
   } catch (error) {
     console.error("Error al incrementar el contador:", error);
     throw new Error("Error al incrementar el contador");
@@ -18,30 +32,30 @@ const incrementVisitas = async () => {
 
 const counter = async (req, res, next) => {
   try {
-    const visita = await incrementVisitas();  // Solo incrementa y devuelve el resultado
-    console.log("Contador actualizado correctamente.");
-    await enviarReporteVisitas()
-    res.status(200).json(visita);  // Devuelve el documento con el contador actualizado
+    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const { visita, ubicacion } = await incrementVisitas(ip);
+    console.log(`📌 Nueva visita desde ${ubicacion}`);
+    
+    await enviarReporteVisitas(ubicacion); // Enviamos el email con la ubicación
+
+    res.status(200).json(visita);
   } catch (error) {
     console.error("Error al incrementar el contador:", error);
     res.status(500).json({ error: "Error al incrementar el contador" });
   }
 };
 
-
 const getCounter = async (req, res, next) => {
   try {
-    const visita = await Visita.findOne({});  // Busca el primer documento
-    res.status(200).json(visita);  // Devuelve solo el valor de visitas sin modificarlo
+    const visita = await Visita.findOne({});
+    res.status(200).json(visita);
   } catch (error) {
     console.error("Error al obtener el contador:", error);
     res.status(500).json({ error: "Error al obtener el contador" });
   }
 };
 
-
 module.exports = {
   counter,
   getCounter
 };
-
